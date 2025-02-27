@@ -27,7 +27,7 @@ grad = (f(x1+h) - f(x1)) / h
 #przesuniecie w lewo tez wynika z pochodnej - wierzcholek jest w punkcie -0.5 a nie w 0.0
 #przesuniecie w dol wynika z tego, ze sa 2 miejsca zerowe funkcji x^2+x
 #pochodna mówi czy funkcja w danym punkcie dla dx rosnie czy maleje; 
-#pochodna jest przydatna do analizy funkcji - mozna dzieki niej stwierdzic czy np funkcja jest symetryczna (taka sama pochodna ale przeciwny znak)
+#pochodna jest przydatna do analizy funkcji - mozna dzieki niej np. stwierdzic czy funkcja jest symetryczna (taka sama pochodna ale przeciwny znak)
 
 #pochodna funkcji wielu zmiennych:
 a = 4 
