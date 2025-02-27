@@ -1,0 +1,6 @@
+digraph {
+	graph [rankdir=LR]
+	1 [label="label 1" shape=record]
+	2 [label="label 2" shape=record]
+	1 -> 2
+}
