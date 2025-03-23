@@ -8,17 +8,43 @@ class Value:
         self.grad = 0.0 # pochodna 0 oznacza brak wpływu na wyjscie 
         self._children = list(_children)
         self._op = _op
+        self._backward = lambda : None
         self.label = label
     def __repr__(self) -> str :
         return f'Value({self.data}, op={self._op})'
     def __add__(self, other):
-        return Value(self.data + other.data, [self, other], '+')
+        out = Value(self.data + other.data, [self, other], '+')
+        def _backward():
+            self.grad = out.grad  
+            other.grad = out.grad
+        out._backward = _backward
+        return out
     def __sub__(self, other):
-        return Value(self.data - other.data, [self, other], '-')
+        out = Value(self.data - other.data, [self, other], '-')
+        def _backward():
+            self.grad = out.grad  
+            other.grad = out.grad
+        out._backward = _backward
+        return out
     def __mul__(self, other):
-        return Value(self.data * other.data, [self, other], '*')
+        out = Value(self.data * other.data, [self, other], '*')
+        def _backward():
+            self.grad = out.grad  * other.data
+            other.grad = out.grad * self.data
+        out._backward = _backward
+        return out
     def tanh(self):
-        return Value(np.tanh(self.data), [self], 'tanh')
+        out = Value(np.tanh(self.data), [self], 'tanh')
+        def _backward():
+            self.grad = (1 - out.data**2) * out.grad
+        out._backward = _backward
+        return out
+    def backprop(self):
+        self._backward()
+        if(len(self._children) > 0):
+            self._children[0].backprop()
+            if(len(self._children) > 1):
+                self._children[1].backprop()
     
 
 
@@ -26,7 +52,7 @@ def draw_graph(root):
     dot = Digraph(format='svg', graph_attr={'rankdir': 'TB'})
     
     def build(parent, n, op):
-        dot.node(name=str(id(n)), label='{%s|%.2f}' % (n.label, n.data), shape='record')
+        dot.node(name=str(id(n)), label='{%s|value=%.2f|grad=%.2f}' % (n.label, n.data, n.grad), shape='record')
         if(op != ''):
             dot.node(name=str(id(parent))+op, label=f'{op}')
             dot.edge(str(id(n)), str(id(parent))+op)
@@ -88,7 +114,7 @@ x = np.arange(-5,5, 0.1)
 def f(x) :
     return 2*x 
 
-# wykres funkcji tanh - tanges hiperboliczny
+# wykres funkcji tanh - tanges hiperboliczny - gwarantuje wartosc w przedziale (-1,1) - normalizacja
 # plt.plot(x,  np.tanh(x) ); plt.grid()
 
 # model neuronu:
@@ -100,12 +126,20 @@ x2 = Value(-4, label='x2')
 w1 = Value(3, label='w1') 
 w2 = Value(5, label='w2')
 # stała 
-b = Value(15.5, label='b') 
+b = Value(15, label='b') 
 
 x1w1 = x1 * w1 
 x2w2 = x2 * w2 
 x1w1x2w2 = x1w1 + x2w2 
-o = x1w1x2w2 + b # 1.5
-L = o.tanh()
-print(L) # 0.91
-draw_graph(L)
+n = x1w1x2w2 + b # 1.5
+o = n.tanh() 
+
+o.grad = 1
+o.backprop()
+# o._backward() 
+# n._backward() 
+# x1w1x2w2._backward() 
+# b._backward() 
+# x2w2._backward() 
+# x1w1._backward()
+draw_graph(o)
