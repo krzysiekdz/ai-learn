@@ -15,28 +15,28 @@ class Value:
     def __add__(self, other):
         out = Value(self.data + other.data, [self, other], '+')
         def _backward():
-            self.grad = out.grad  
-            other.grad = out.grad
+            self.grad += out.grad  
+            other.grad += out.grad
         out._backward = _backward
         return out
     def __sub__(self, other):
         out = Value(self.data - other.data, [self, other], '-')
         def _backward():
-            self.grad = out.grad  
-            other.grad = out.grad
+            self.grad += out.grad  
+            other.grad += out.grad
         out._backward = _backward
         return out
     def __mul__(self, other):
         out = Value(self.data * other.data, [self, other], '*')
         def _backward():
-            self.grad = out.grad  * other.data
-            other.grad = out.grad * self.data
+            self.grad += out.grad  * other.data
+            other.grad += out.grad * self.data
         out._backward = _backward
         return out
     def tanh(self):
         out = Value(np.tanh(self.data), [self], 'tanh')
         def _backward():
-            self.grad = (1 - out.data**2) * out.grad
+            self.grad += (1 - out.data**2) * out.grad
         out._backward = _backward
         return out
     def backprop(self):
@@ -135,11 +135,60 @@ n = x1w1x2w2 + b # 1.5
 o = n.tanh() 
 
 o.grad = 1
-o.backprop()
+# reczne obliczenie, to wywolanie backward kolejno na elementach
 # o._backward() 
 # n._backward() 
 # x1w1x2w2._backward() 
 # b._backward() 
 # x2w2._backward() 
 # x1w1._backward()
-draw_graph(o)
+# tutaj liczymy automatycznie , co jest równowanze powyzszym wywołaniom
+# o.backprop()
+# draw_graph(o)
+
+# multivariable case :
+a = Value(2, label='a')
+b = Value(-3, label='b')
+c = a + b ; c.label = 'c'
+d = a * b ; d.label = 'd'
+e = c + d ; e.label = 'e'
+f = e * a ; f.label = 'f'
+f.grad = 1
+f.backprop()
+draw_graph(f)
+# f = ((a + b) + a*b ) * a = a^2 + ab + a^2 b
+
+# liczac np pochodna df/da klasycznie :
+# df/da = 2a + b + 2ab = 4-3-12=-11 
+
+# liczac z chain rule: 
+# jesli f = z * a, gdzie z = (a+b+a*b)
+# z = (-1 - 6) = -7 ;
+# wszystkie zmienne "a" oznaczmy dla rozroznienia cyframi, czyli: 
+# f = (a1 + b + a2 * b) * a3 , gdzie a1=a2=a3=a 
+# df/da3 = (a1 + b + a2 * b) = -7 
+# df/da1 = d (z * a3) / da1 = a3 * dz/da1 = a3 * d(a1 + b + a2 * b)/da1 = a3 * (1+0+0) = a3 = 2
+# bo patrzymy tylko na zmienna a1 - dla niej liczymy 
+# df/da2 = a3 * d(a1 + b + a2 * b)/da2 = a3 * (0+0+b) = a3 * b = -6 
+
+# w sumie df/da to  : 
+# df/da = df/da1 + df/da2 + df/da3 = z + a3 + a3*b = -7 + 2 -6 = -11 - wychodzi to samo, co klasycznie liczac
+# jest to intuicyjne, bo zmienna w "roznych miejsach grafu" ma inny wplyw ("grad"), ktory sie sumuje
+# czyli taka pochodną liczymy tak jakby a1,a2,a3 byly oddzielnymi zmiennymi, a nastepnie sumujemy te pochodne, bo jest to ta sama zmienna
+# wiec zmienna "a" ma wplyw bedacy sumą pochodnych a1,a2,a3
+
+# inny przyklad:
+# f = x^2 * x^3 + 2x 
+# df/dx = d(x^5 + 2x)/dx = 5x^4 + 2 - liczac klasycznie
+
+# liczac z chain rule: 
+# f = (x1)^2 * (x2)^3 + 2(x3)
+# df/dx3 = 2 
+# df/dx1 = (x2)^3 * 2(x1) = 2x^4 
+# df/dx2 = (x1)^2 * 3(x2)^2 = 3x^4
+# suma pochodnych = 2 + 2x^4 + 3x^4 = 5x^4 + 2 - wychodzi to samo jak liczac klasycznie
+
+# z tej reguły wynika self.grad += ... zamiast self.grad = ... w funkcji _backward()
+
+
+
