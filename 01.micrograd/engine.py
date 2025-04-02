@@ -13,30 +13,56 @@ class Value:
     def __repr__(self) -> str :
         return f'Value({self.data}, op={self._op})'
     def __add__(self, other):
+        other = other if isinstance(other, Value) else Value(other)
         out = Value(self.data + other.data, [self, other], '+')
         def _backward():
             self.grad += out.grad  
             other.grad += out.grad
         out._backward = _backward
         return out
+    def __radd__(self, other):
+        return self + other
+    def __neg__(self):
+        return self*(-1)
     def __sub__(self, other):
+        other = other if isinstance(other, Value) else Value(other)
         out = Value(self.data - other.data, [self, other], '-')
         def _backward():
             self.grad += out.grad  
             other.grad += out.grad
         out._backward = _backward
         return out
+    def __rsub__(self, other):
+        return self - other
     def __mul__(self, other):
+        other = other if isinstance(other, Value) else Value(other)
         out = Value(self.data * other.data, [self, other], '*')
         def _backward():
             self.grad += out.grad  * other.data
             other.grad += out.grad * self.data
         out._backward = _backward
         return out
+    def __rmul__(self, other): 
+        return self * other
+    def __truediv__(self, other):
+        return self * other**-1
+    def __pow__(self, other):
+        assert isinstance(other, (int, float))
+        out = Value(self.data**other, [self], f'pow({other})')
+        def _backward():
+            self.grad = out.grad * other * self.data**(other-1)
+        out._backward = _backward
+        return out
     def tanh(self):
         out = Value(np.tanh(self.data), [self], 'tanh')
         def _backward():
             self.grad += (1 - out.data**2) * out.grad
+        out._backward = _backward
+        return out
+    def exp(self):
+        out = Value(np.exp(self.data), [self], 'exp')
+        def _backward():
+            self.grad +=  out.data * out.grad  # d(e^x)/dx = e^x
         out._backward = _backward
         return out
     def backprop(self):
@@ -155,7 +181,7 @@ e = c + d ; e.label = 'e'
 f = e * a ; f.label = 'f'
 f.grad = 1
 f.backprop()
-draw_graph(f)
+# draw_graph(f)
 # f = ((a + b) + a*b ) * a = a^2 + ab + a^2 b
 
 # liczac np pochodna df/da klasycznie :
@@ -190,5 +216,26 @@ draw_graph(f)
 
 # z tej reguły wynika self.grad += ... zamiast self.grad = ... w funkcji _backward()
 
+# takie operacje powinny byc wykonywalne
+# a = Value(6) 
+# # b = 4 * (1 + a)
+# # c = a ** 2 
+# b = (a / Value(3) ) ** 3
+# b.grad = 1 
+# b.backprop()
+# draw_graph(b)
+
+# takie operacje powinny byc wykonywalne
+# a = Value(6)
+# b = -a - Value(3)
+# b.grad = 1 
+# b.backprop()
+# draw_graph(b)
+
+#ostatecznie backpropagation działa dla modelu neuronu
+o.backprop()
+draw_graph(o)
+
+# zaczac od 1:40 - pytorch
 
 
