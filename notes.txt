@@ -1,0 +1,12 @@
+pytorch - rozne przyklady sieci neuronowych
+pocwiczyc trenowanie na innych przykladach - rozpoznawanie liter/cyfr z obrazu itp
+zapoznac sie z pytorch/tensorflow/keras
+
+kolejne wideo - modele jezykowe
+jak AI moze sterowac grą?
+
+# pomyslec o pryzkladzie aplikacji mobilnej z klasyfikacja obrazow 
+# sprawdzic kurs flutter + ai
+# byłby to ciekawy przyklad projektu
+# analogicznie moglbym zrobic taki w kotlinie
+# moze aplikacja do rozpoznawania grzybow?
