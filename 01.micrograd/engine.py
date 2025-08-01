@@ -236,6 +236,4 @@ f.backprop()
 o.backprop()
 draw_graph(o)
 
-# zaczac od 1:40 - pytorch
-
 
